@@ -1,0 +1,45 @@
+# A deliberately broken Java pod for testing the learning loop.
+# Bug: JVM heap (-Xmx400m) is bigger than the container limit (256Mi),
+# so the kernel OOM-kills it (exit 137) and the logs show no Java error.
+#
+#   kubectl apply -f demo/oom-java.yaml
+#   then ask the AI: "Why is memory-hog crashing in default?"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-hog
+  labels: {app: memory-hog}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: memory-hog}
+  template:
+    metadata:
+      labels: {app: memory-hog}
+    spec:
+      containers:
+        - name: app
+          image: eclipse-temurin:21-jdk
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx400m"
+          command: ["sh", "-c"]
+          args:
+            - |
+              cat > /tmp/Hog.java <<'EOF'
+              import java.util.*;
+              public class Hog {
+                public static void main(String[] a) throws Exception {
+                  List<byte[]> keep = new ArrayList<>();
+                  for (int i = 1; ; i++) {
+                    keep.add(new byte[10 * 1024 * 1024]);
+                    System.out.println("allocated " + (i * 10) + " MB");
+                    Thread.sleep(300);
+                  }
+                }
+              }
+              EOF
+              exec java $JAVA_OPTS /tmp/Hog.java
+          resources:
+            requests: {memory: 128Mi, cpu: 100m}
+            limits: {memory: 256Mi, cpu: 500m}

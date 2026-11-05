@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "k8s-local": { "command": ".venv/bin/python", "args": ["mcp_server.py"] }
+  }
+}

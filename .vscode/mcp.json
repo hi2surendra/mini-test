@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "k8s-local": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["${workspaceFolder}/mcp_server.py"]
+    }
+  }
+}
